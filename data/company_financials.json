@@ -1,0 +1,22 @@
+{
+  "company": "Prologis, Inc.",
+  "ticker": "PLD",
+  "cik": "0001045609",
+  "metrics": {
+    "revenue": {
+      "value": 8790127000,
+      "fiscal_year_end": "2025-12-31",
+      "source_tag": "Revenues"
+    },
+    "net_income": {
+      "value": 3328231000,
+      "fiscal_year_end": "2025-12-31",
+      "source_tag": "NetIncomeLoss"
+    },
+    "operating_expenses": {
+      "value": 2280683000,
+      "fiscal_year_end": "2025-12-31",
+      "source_tag": "OperatingExpenses"
+    }
+  }
+}

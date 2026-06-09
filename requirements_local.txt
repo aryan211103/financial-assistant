@@ -1,0 +1,10 @@
+# Local environment for training and deploying the regression model.
+# scikit-learn is pinned to 1.2.2 so your saved model loads cleanly inside
+# the SageMaker sklearn 1.2-1 container. Do not skip this pin.
+
+scikit-learn==1.2.2
+joblib
+numpy
+pandas
+sagemaker
+boto3

@@ -1,0 +1,29 @@
+# Secrets and credentials. NEVER commit these.
+gcp-key.json
+*.pem
+*.key
+.env
+.env.*
+
+# Local virtual environments
+sm-deploy/
+venv/
+.venv/
+env/
+
+# Python junk
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Streamlit local secrets (when you add the app)
+.streamlit/secrets.toml
+
+# Model artifacts kept in Drive, app uses SageMaker endpoints
+*.joblib
+*.tar.gz

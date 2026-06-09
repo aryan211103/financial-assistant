@@ -1,0 +1,48 @@
+{
+  "company": "Prologis",
+  "note": "Mock press releases for the assignment data source. Synthetic, not real announcements.",
+  "press_releases": [
+    {
+      "id": 1,
+      "date": "2026-04-15",
+      "title": "Prologis Acquires 2.3M Sq Ft Logistics Portfolio in Chicago",
+      "category": "acquisition",
+      "summary": "Prologis completed the acquisition of a 2.3 million square foot industrial portfolio across the Chicago metro area, expanding its logistics footprint near major rail and highway hubs."
+    },
+    {
+      "id": 2,
+      "date": "2026-03-02",
+      "title": "Prologis Breaks Ground on New Dallas Distribution Center",
+      "category": "expansion",
+      "summary": "The company began construction of a 780,000 square foot distribution center in the Dallas market to meet rising e-commerce and supply chain demand."
+    },
+    {
+      "id": 3,
+      "date": "2026-01-28",
+      "title": "Prologis Reports Fourth Quarter and Full Year Results",
+      "category": "earnings",
+      "summary": "Prologis reported full year revenue growth driven by strong leasing activity, high occupancy, and rising rents across its industrial and logistics portfolio."
+    },
+    {
+      "id": 4,
+      "date": "2025-11-12",
+      "title": "Prologis Signs Major Lease with National Retailer in Atlanta",
+      "category": "leasing",
+      "summary": "A national retailer signed a long term lease for a 710,000 square foot warehouse in Atlanta, supporting the retailer's regional fulfillment network."
+    },
+    {
+      "id": 5,
+      "date": "2025-09-20",
+      "title": "Prologis Expands Solar and Sustainability Program",
+      "category": "sustainability",
+      "summary": "Prologis announced an expansion of rooftop solar installations across its warehouse portfolio as part of its commitment to reduce operational carbon emissions."
+    },
+    {
+      "id": 6,
+      "date": "2025-07-08",
+      "title": "Prologis Acquires Last Mile Facility in Los Angeles",
+      "category": "acquisition",
+      "summary": "Prologis acquired a 410,000 square foot last mile logistics facility in Los Angeles to strengthen same day delivery capacity in Southern California."
+    }
+  ]
+}

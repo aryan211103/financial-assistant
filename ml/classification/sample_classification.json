@@ -1,0 +1,1 @@
+{"instances": [{"age": 40, "job": "blue-collar", "marital": "married", "education": "primary", "default": "no", "balance": 640, "housing": "yes", "loan": "yes", "contact": NaN, "day_of_week": 8, "month": "may", "duration": 347, "campaign": 2, "pdays": -1, "previous": 0, "poutcome": NaN}]}
