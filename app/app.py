@@ -3,11 +3,10 @@ app.py - Financial Assistant for a Real Estate Company (Prologis demo)
 
 Streamlit front end that ties together:
   - Postgres (property and financial records)
-  - SEC EDGAR cached financials
-  - Mock press releases
+  - SEC EDGAR cached financials (annual and latest quarter)
+  - Mock press releases (with text-derived insight extraction)
   - Two SageMaker endpoints (regression and classification)
-
-The Chatbot tab is filled in later, once the Vertex AI ADK agent exists.
+  - A Vertex AI ADK chatbot
 
 Run from the repo root:
     pip install streamlit psycopg2-binary boto3
@@ -17,13 +16,13 @@ Run from the repo root:
 
 import os
 import json
+import sys
 from pathlib import Path
 
 import boto3
 import psycopg2
 import streamlit as st
 
-import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent / "chatbot"))
 from agent import ask
 
@@ -74,6 +73,7 @@ def invoke(endpoint, payload):
     )
     return json.loads(resp["Body"].read().decode())
 
+
 def bedrock_summarize(text):
     client = boto3.client("bedrock-runtime", region_name="us-west-2")
     prompt = (
@@ -87,6 +87,7 @@ def bedrock_summarize(text):
     )
     return resp["output"]["message"]["content"][0]["text"]
 
+
 def comprehend_extract(text):
     client = boto3.client("comprehend", region_name="us-east-1")
     snippet = text[:4500]  # sync API limit is 5000 bytes
@@ -99,6 +100,20 @@ def comprehend_extract(text):
             seen.append(t)
     return {"sentiment": sentiment["Sentiment"].title(), "key_phrases": seen[:10]}
 
+
+def extract_insight(text):
+    t = text.lower()
+    if any(k in t for k in ["solar", "sustainab", "carbon", "emission"]):
+        return "Sustainability"
+    if any(k in t for k in ["quarter", "full year", "earnings", "results"]):
+        return "Quarterly update"
+    if any(k in t for k in ["lease", "tenant", "retailer"]):
+        return "Leasing"
+    if any(k in t for k in ["acquir", "acquisition", "purchase"]):
+        return "Acquisition"
+    if any(k in t for k in ["expand", "construction", "breaks ground", "distribution center"]):
+        return "Expansion"
+    return "Other"
 
 # ---------- UI ----------
 st.title("Real Estate Financial Assistant")
@@ -139,6 +154,18 @@ with tab_data:
     c3.metric("Operating expenses", f"${m['operating_expenses']['value']:,}")
     st.caption(f"{fin['company']} ({fin['ticker']}), FY end {m['revenue']['fiscal_year_end']}")
 
+    q = fin.get("quarterly")
+    if q:
+        end = (q.get("net_income") or next(iter(q.values()))).get("quarter_end")
+        st.markdown(f"**Most recent quarter (ending {end})**")
+        qc1, qc2, qc3 = st.columns(3)
+        if "revenue" in q:
+            qc1.metric("Revenue", f"${q['revenue']['value']:,}")
+        if "net_income" in q:
+            qc2.metric("Net income", f"${q['net_income']['value']:,}")
+        if "operating_expenses" in q:
+            qc3.metric("Operating expenses", f"${q['operating_expenses']['value']:,}")
+
     st.divider()
     st.subheader("Property records (Postgres)")
     if not get_db_url():
@@ -166,6 +193,15 @@ with tab_data:
 with tab_news:
     st.subheader("Recent press releases")
     pr = load_json("press_releases.json")
+
+    # Insights derived from the text itself, not the stored category label
+    st.markdown("**Extracted insights**")
+    insights = {}
+    for p in pr["press_releases"]:
+        kind = extract_insight(p["title"] + " " + p["summary"])
+        insights.setdefault(kind, []).append(p["title"])
+    st.caption(", ".join(f"{k}: {len(v)}" for k, v in sorted(insights.items())))
+
     if st.button("Extract key insights (AWS Comprehend)"):
         joined = "\n".join(
             f"{p['date']} {p['title']}: {p['summary']}" for p in pr["press_releases"]
@@ -177,6 +213,11 @@ with tab_news:
                 st.write("**Key phrases:** " + ", ".join(result["key_phrases"]))
             except Exception as e:
                 st.error(f"Comprehend error: {e}")
+    if st.button("Summarize all recent news"):
+        joined = "\n".join(f"{p['title']}: {p['summary']}" for p in pr["press_releases"])
+        with st.spinner("Summarizing..."):
+            st.info(ask("Summarize these press releases in 3 sentences: " + joined))
+
     cats = ["All"] + sorted({p["category"] for p in pr["press_releases"]})
     pick = st.selectbox("Category", cats)
     for item in pr["press_releases"]:

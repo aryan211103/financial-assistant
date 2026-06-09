@@ -1,0 +1,128 @@
+=== Bank Marketing EDA ===
+Shape: 45211 rows, 16 features
+
+Column dtypes:
+age             int64
+job            object
+marital        object
+education      object
+default        object
+balance         int64
+housing        object
+loan           object
+contact        object
+day_of_week     int64
+month          object
+duration        int64
+campaign        int64
+pdays           int64
+previous        int64
+poutcome       object
+
+Missing values per column:
+age                0
+job              288
+marital            0
+education       1857
+default            0
+balance            0
+housing            0
+loan               0
+contact        13020
+day_of_week        0
+month              0
+duration           0
+campaign           0
+pdays              0
+previous           0
+poutcome       36959
+
+Class balance (target = subscribed):
+y
+no     39922
+yes     5289
+Subscribe rate: 0.117  (this is imbalanced)
+
+Numeric features (7): ['age', 'balance', 'day_of_week', 'duration', 'campaign', 'pdays', 'previous']
+Numeric summary statistics:
+               count         mean          std     min    25%    50%     75%       max
+age          45211.0    40.936210    10.618762    18.0   33.0   39.0    48.0      95.0
+balance      45211.0  1362.272058  3044.765829 -8019.0   72.0  448.0  1428.0  102127.0
+day_of_week  45211.0    15.806419     8.322476     1.0    8.0   16.0    21.0      31.0
+duration     45211.0   258.163080   257.527812     0.0  103.0  180.0   319.0    4918.0
+campaign     45211.0     2.763841     3.098021     1.0    1.0    2.0     3.0      63.0
+pdays        45211.0    40.197828   100.128746    -1.0   -1.0   -1.0    -1.0     871.0
+previous     45211.0     0.580323     2.303441     0.0    0.0    0.0     0.0     275.0
+
+Categorical features (9): ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome']
+
+Value counts for 'job':
+job
+blue-collar      9732
+management       9458
+technician       7597
+admin.           5171
+services         4154
+retired          2264
+self-employed    1579
+entrepreneur     1487
+unemployed       1303
+housemaid        1240
+student           938
+NaN               288
+
+Value counts for 'marital':
+marital
+married     27214
+single      12790
+divorced     5207
+
+Value counts for 'education':
+education
+secondary    23202
+tertiary     13301
+primary       6851
+NaN           1857
+
+Value counts for 'default':
+default
+no     44396
+yes      815
+
+Value counts for 'housing':
+housing
+yes    25130
+no     20081
+
+Value counts for 'loan':
+loan
+no     37967
+yes     7244
+
+Value counts for 'contact':
+contact
+cellular     29285
+NaN          13020
+telephone     2906
+
+Value counts for 'month':
+month
+may    13766
+jul     6895
+aug     6247
+jun     5341
+nov     3970
+apr     2932
+feb     2649
+jan     1403
+oct      738
+sep      579
+mar      477
+dec      214
+
+Value counts for 'poutcome':
+poutcome
+NaN        36959
+failure     4901
+other       1840
+success     1511

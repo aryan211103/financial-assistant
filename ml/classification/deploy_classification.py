@@ -12,10 +12,10 @@ import sagemaker
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker.serverless import ServerlessInferenceConfig
 
-# ---------- EDIT IF YOUR ROLE NAME DIFFERS ----------
+
 ROLE_ARN = "arn:aws:iam::542129211116:role/SageMakerExecutionRole"
 ENDPOINT_NAME = "bank-subscription"
-# ----------------------------------------------------
+
 
 
 def main():
@@ -45,7 +45,7 @@ def main():
         max_concurrency=5,
     )
 
-    print("Deploying serverless endpoint. This takes a few minutes...")
+    print("Deploying serverless endpoint.")
     sklearn_model.deploy(
         serverless_inference_config=serverless_config,
         endpoint_name=ENDPOINT_NAME,

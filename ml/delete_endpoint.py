@@ -1,15 +1,13 @@
-"""
-delete_endpoint.py
-Run this the moment you finish recording the demo. Stops the hourly billing.
+"""Delete SageMaker endpoints. Defaults to both. Run: python delete_endpoint.py"""
+import boto3, sys
 
-Run:  python delete_endpoint.py
-"""
-
-import boto3
-
-ENDPOINT_NAME = "housing-regression"  # change per endpoint
-
+ENDPOINTS = ["housing-regression", "bank-subscription"]
 sm = boto3.client("sagemaker", region_name="us-east-1")
-sm.delete_endpoint(EndpointName=ENDPOINT_NAME)
-sm.delete_endpoint_config(EndpointConfigName=ENDPOINT_NAME)
-print("Deleted endpoint and config:", ENDPOINT_NAME)
+
+for name in (sys.argv[1:] or ENDPOINTS):
+    try:
+        sm.delete_endpoint(EndpointName=name)
+        sm.delete_endpoint_config(EndpointConfigName=name)
+        print("Deleted:", name)
+    except Exception as e:
+        print("Skipped", name, ":", e)

@@ -29,7 +29,7 @@ def main():
     print("Features:", feature_names)
     print("Rows:", X.shape[0])
 
-    # 2. Light EDA (enough to show in your notebook / demo)
+    # 2. EDA 
     print("\nFeature summary:")
     print(X.describe().T[["mean", "std", "min", "max"]])
     print("\nTarget summary:")
@@ -39,11 +39,6 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
-
-    # NOTE: Random Forest is a tree model. It splits on thresholds, so feature
-    # scaling does NOT change results and is not needed. The assignment says
-    # standardize "where appropriate" - for trees it is not appropriate, so we
-    # intentionally skip it. (Say exactly this if asked in the interview.)
 
     # 4. Train
     model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)

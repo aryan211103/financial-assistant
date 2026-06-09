@@ -7,7 +7,6 @@ Routes natural language questions to the right data source:
   - Mock press releases
 and answers in natural language using Gemini on Vertex AI.
 
-Test from the terminal (DATABASE_URL must be exported):
     python chatbot/agent.py
 The Streamlit app imports ask() from this module.
 """
@@ -19,15 +18,12 @@ from pathlib import Path
 
 import psycopg2
 
-# Hosted: load the service account key from a secret into a temp file.
-# Local: this is absent, so it falls back to your gcloud login.
 _sa_key = os.environ.get("GCP_SA_KEY_JSON")
 if _sa_key:
     with open("/tmp/gcp_key.json", "w") as f:
         f.write(_sa_key)
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/gcp_key.json"
 
-# Route ADK and genai to Vertex AI. Must be set before the agent is built.
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
 os.environ["GOOGLE_CLOUD_PROJECT"] = "financial-assistant-498905"
 os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
@@ -90,21 +86,28 @@ def query_properties(metro_area: str = "", property_type: str = "") -> str:
 def get_company_financials() -> str:
     """Get the company's overall financials from its latest SEC EDGAR filing.
     Use for company level questions like total revenue, net income, or
-    operating expenses.
+    operating expenses, for the full year or the most recent quarter.
 
     Returns:
-        A text summary of the company's revenue, net income, and operating expenses.
+        A text summary of annual and latest-quarter revenue, net income, and operating expenses.
     """
     with open(DATA_DIR / "company_financials.json") as f:
         data = json.load(f)
     m = data["metrics"]
-    return (
-        f"{data['company']} ({data['ticker']}), fiscal year ending "
-        f"{m['revenue']['fiscal_year_end']}:\n"
-        f"Revenue: ${m['revenue']['value']:,}\n"
-        f"Net income: ${m['net_income']['value']:,}\n"
-        f"Operating expenses: ${m['operating_expenses']['value']:,}"
-    )
+    lines = [
+        f"{data['company']} ({data['ticker']}) annual figures, fiscal year ending {m['revenue']['fiscal_year_end']}:",
+        f"Revenue: ${m['revenue']['value']:,}",
+        f"Net income: ${m['net_income']['value']:,}",
+        f"Operating expenses: ${m['operating_expenses']['value']:,}",
+    ]
+    q = data.get("quarterly", {})
+    if q:
+        end = (q.get("net_income") or next(iter(q.values()))).get("quarter_end")
+        lines.append(f"\nMost recent quarter (ending {end}):")
+        for label, key in [("Revenue", "revenue"), ("Net income", "net_income"), ("Operating expenses", "operating_expenses")]:
+            if key in q:
+                lines.append(f"{label}: ${q[key]['value']:,}")
+    return "\n".join(lines)
 
 
 def search_press_releases(category: str = "", keyword: str = "") -> str:

@@ -1,17 +1,7 @@
 """
 deploy_regression.py
 Uploads the trained model to S3 and deploys it as a real-time SageMaker endpoint.
-
-Before running:
-  1. Run train_regression.py first (creates model_regression.tar.gz).
-  2. Run `aws configure` with your IAM user keys and region us-east-1.
-  3. Create a SageMaker execution role (see the chat instructions) and paste
-     its ARN into ROLE_ARN below.
-
 Run:  python deploy_regression.py
-
-Cost reminder: this endpoint bills by the hour while it exists.
-Delete it after your demo with delete_endpoint.py (or the console).
 """
 
 import json
@@ -20,11 +10,9 @@ import sagemaker
 from sagemaker.sklearn.model import SKLearnModel
 from sagemaker.serverless import ServerlessInferenceConfig
 
-# ---------- EDIT THESE TWO LINES ----------
+# Sagemaker connection
 ROLE_ARN = "arn:aws:iam::542129211116:role/SageMakerExecutionRole"
 ENDPOINT_NAME = "housing-regression"
-# ------------------------------------------
-
 
 def main():
     session = sagemaker.Session()
@@ -50,7 +38,7 @@ def main():
         sagemaker_session=session,
     )
 
-    # 3. Deploy a real-time endpoint (takes a few minutes)
+    # 3. Deploying a real-time endpoint
     serverless_config = ServerlessInferenceConfig(
         memory_size_in_mb=2048,
         max_concurrency=5,

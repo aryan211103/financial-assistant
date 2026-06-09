@@ -1,0 +1,58 @@
+=== California Housing EDA ===
+Shape: 20640 rows, 9 columns
+
+Column dtypes:
+MedInc         float64
+HouseAge       float64
+AveRooms       float64
+AveBedrms      float64
+Population     float64
+AveOccup       float64
+Latitude       float64
+Longitude      float64
+MedHouseVal    float64
+
+Missing values per column:
+MedInc         0
+HouseAge       0
+AveRooms       0
+AveBedrms      0
+Population     0
+AveOccup       0
+Latitude       0
+Longitude      0
+MedHouseVal    0
+
+Numeric summary statistics:
+               count         mean          std         min         25%          50%          75%           max
+MedInc       20640.0     3.870671     1.899822    0.499900    2.563400     3.534800     4.743250     15.000100
+HouseAge     20640.0    28.639486    12.585558    1.000000   18.000000    29.000000    37.000000     52.000000
+AveRooms     20640.0     5.429000     2.474173    0.846154    4.440716     5.229129     6.052381    141.909091
+AveBedrms    20640.0     1.096675     0.473911    0.333333    1.006079     1.048780     1.099526     34.066667
+Population   20640.0  1425.476744  1132.462122    3.000000  787.000000  1166.000000  1725.000000  35682.000000
+AveOccup     20640.0     3.070655    10.386050    0.692308    2.429741     2.818116     3.282261   1243.333333
+Latitude     20640.0    35.631861     2.135952   32.540000   33.930000    34.260000    37.710000     41.950000
+Longitude    20640.0  -119.569704     2.003532 -124.350000 -121.800000  -118.490000  -118.010000   -114.310000
+MedHouseVal  20640.0     2.068558     1.153956    0.149990    1.196000     1.797000     2.647250      5.000010
+
+Target (MedHouseVal) distribution:
+count    20640.000000
+mean         2.068558
+std          1.153956
+min          0.149990
+25%          1.196000
+50%          1.797000
+75%          2.647250
+max          5.000010
+Note: target is median house value in units of 100,000 USD, capped at 5.0.
+
+Correlation of each feature with the target (sorted):
+MedHouseVal    1.000000
+MedInc         0.688075
+AveRooms       0.151948
+HouseAge       0.105623
+AveOccup      -0.023737
+Population    -0.024650
+Longitude     -0.045967
+AveBedrms     -0.046701
+Latitude      -0.144160
