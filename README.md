@@ -1,6 +1,6 @@
 # Real Estate Financial Assistant
 
-A full stack financial assistant for a real estate company (Prologis demo). It combines three data sources, two machine learning models hosted on AWS SageMaker, and a Vertex AI ADK chatbot behind a Streamlit web interface.
+A full stack financial assistant for a real estate company (Prologis demo). It combines three data sources, two machine learning models hosted on AWS SageMaker, and a chatbot built on Google Agent Platform (the renamed Vertex AI), behind a Streamlit web interface.
 
 **Live app:** https://financial-assistant-aryan.streamlit.app
 **Repository:** https://github.com/aryan211103/financial-assistant
@@ -10,8 +10,9 @@ A full stack financial assistant for a real estate company (Prologis demo). It c
 - A conversational chatbot that interprets natural language questions and routes them to the right data source.
 - Company financials pulled from SEC EDGAR (annual and latest quarter).
 - A property portfolio backed by Postgres.
-- Company press releases with text derived insight extraction.
+- Company press releases with text derived insight extraction and AWS Comprehend key phrase and sentiment extraction.
 - Two ML predictions served from hosted SageMaker endpoints: house value (regression) and customer subscription (classification).
+- A sidebar system status check that pings the database and both endpoints live, error handling on every external call, and latency plus raw response display on each prediction.
 
 ## Architecture and data flow
 
@@ -22,24 +23,27 @@ A full stack financial assistant for a real estate company (Prologis demo). It c
         |                |                   |                        |
    Chatbot tab     Properties tab      Press Releases tab        ML Predictions tab
         |                |                   |                        |
-   Vertex AI ADK    Postgres (Neon)    press_releases.json       SageMaker runtime
-   agent (Gemini)   + EDGAR cache      + AWS Comprehend          (2 endpoints)
+   Agent Platform   Postgres (Neon)    press_releases.json       SageMaker runtime
+   ADK agent        + EDGAR cache      + AWS Comprehend          (2 endpoints)
+   (Gemini)
         |
    3 function tools
    (Postgres, EDGAR, press releases)
 ```
 
-The chatbot is the integrating layer. It uses Gemini on Vertex AI to read a question, pick the correct tool, fetch from Postgres, the EDGAR cache, or the press releases, and answer in plain language. The other tabs expose the same data sources and the ML endpoints directly.
+The chatbot is the integrating layer. It uses Gemini on Agent Platform to read a question, pick the correct tool, fetch from Postgres, the EDGAR cache, or the press releases, and answer in plain language. The other tabs expose the same data sources and the ML endpoints directly.
 
 ## Project structure
 
 ```
 financial-assistant/
+  .streamlit/
+    config.toml             Theme (slate palette, fonts)
   app/
     app.py                  Streamlit front end (all four tabs)
   chatbot/
-    agent.py                Vertex AI ADK agent with three tools
-    test_vertex.py          Standalone Vertex connectivity check
+    agent.py                Agent Platform ADK agent with three tools
+    test_vertex.py          Standalone connectivity check
   data/
     db_setup.py             Creates Postgres tables and seeds 20 properties
     schema.sql              Table definitions on their own
@@ -68,7 +72,7 @@ financial-assistant/
 `data/edgar_fetch.py` calls the SEC XBRL company facts API for Prologis (ticker PLD, CIK 0001045609). It extracts revenue, net income, and operating expenses from the latest 10-K (annual) and the most recent 10-Q (single quarter), then caches them to `company_financials.json` so the app never depends on EDGAR being reachable at run time. The SEC requires a descriptive User-Agent header, which the script sets.
 
 ### B. Postgres (Neon)
-`data/db_setup.py` creates two tables and seeds 20 property records.
+`data/db_setup.py` creates two tables in one Postgres database and seeds 20 property records.
 
 - `properties`: property_id (primary key), address, metro_area, sq_footage, property_type
 - `financials`: property_id (foreign key), revenue, net_income, expenses
@@ -76,7 +80,7 @@ financial-assistant/
 The schema is also provided on its own in `data/schema.sql`. The database is hosted on Neon so the deployed app can reach it over a public address.
 
 ### C. Press releases
-`data/press_releases.json` holds six mock press releases, each with a category and a summary. The app derives an insight type from the text (acquisition, expansion, quarterly update, leasing, sustainability) and shows a count summary. AWS Comprehend extracts key phrases and sentiment from the same text.
+`data/press_releases.json` holds six mock press releases, each with a category and a summary. The app derives an insight type from the text itself (acquisition, expansion, quarterly update, leasing, sustainability) and shows a count summary. AWS Comprehend extracts key phrases and sentiment from the same text, and a summarize button routes the releases through the chatbot for a short generated summary.
 
 ## Machine learning models
 
@@ -96,17 +100,17 @@ The schema is also provided on its own in `data/schema.sql`. The database is hos
 
 ## How the chatbot routes queries
 
-The agent in `chatbot/agent.py` is built with the Google Agent Development Kit and runs Gemini (`gemini-2.5-flash`) on Vertex AI. It is given three tools, each a plain Python function with a descriptive docstring:
+The agent in `chatbot/agent.py` is built with the Google Agent Development Kit and runs Gemini (`gemini-2.5-flash`) on Agent Platform. It is given three tools, each a plain Python function with a descriptive docstring:
 
 - `query_properties` for specific buildings and their financials (queries Postgres).
 - `get_company_financials` for company wide revenue, net income, and operating expenses, annual or latest quarter (reads the EDGAR cache).
 - `search_press_releases` for announcements such as acquisitions and expansions (reads the press releases).
 
-ADK turns each function's type hints and docstring into a schema the model can call. When a question arrives, Gemini reads the descriptions, decides which tool fits, the Runner executes that function, feeds the result back to the model, and Gemini writes the final natural language answer. Routing is done by the model, not by hardcoded rules, and the agent can call more than one tool in a single turn to combine sources.
+ADK turns each function's type hints and docstring into a schema the model can call. When a question arrives, Gemini reads the descriptions, decides which tool fits, the Runner executes that function, feeds the result back to the model, and Gemini writes the final natural language answer. Routing is done by the model, not by hardcoded rules, and the agent can call more than one tool in a single turn to combine sources. The synchronous entry point retries on transient Agent Platform 429 RESOURCE_EXHAUSTED errors with exponential backoff so brief rate limits do not surface as failures.
 
 ## Local setup
 
-Prerequisites: Python 3.12, a Neon Postgres database, an AWS account with the two SageMaker endpoints deployed, and gcloud authenticated for Vertex.
+Prerequisites: Python 3.12, a Neon Postgres database, an AWS account with the two SageMaker endpoints deployed, and gcloud authenticated for Agent Platform.
 
 ```bash
 # 1. Install dependencies
@@ -119,7 +123,7 @@ export DATABASE_URL="postgresql://user:password@host.neon.tech/dbname?sslmode=re
 python data/db_setup.py
 python data/edgar_fetch.py
 
-# 4. Authenticate for Vertex (local uses your gcloud login)
+# 4. Authenticate for Agent Platform (local uses your gcloud login)
 gcloud auth application-default login
 gcloud config set project financial-assistant-498905
 
@@ -151,19 +155,21 @@ python deploy_classification.py
 
 Each deploy uploads the model tarball to S3, wraps it in the prebuilt scikit-learn 1.2-1 container with the matching inference handler, and creates a serverless endpoint. A SageMaker execution role is required and its ARN is set in each deploy script.
 
-### GCP Vertex AI
-The chatbot needs the Vertex AI API enabled on the project and either gcloud Application Default Credentials (local) or a service account key (hosted). The agent sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, the project, and the region so the google-genai library routes to Vertex.
+Note on the classification handler: the first deployment returned a 500 because the OneHotEncoder called numpy isnan on string categories when a categorical column arrived as a numeric dtype. The fix is in `inference_classification.py`, where `predict_fn` reindexes the input to the training columns and forces every categorical column to a string and every numeric column to a number before the model runs. The training script saves the categorical and numeric column lists with the model so the handler knows which is which.
+
+### GCP Agent Platform (Vertex AI)
+The chatbot needs the Agent Platform API enabled on the project (service id `aiplatform.googleapis.com`) and either gcloud Application Default Credentials (local) or a service account key (hosted). The agent sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`, the project, and the region so the google-genai library routes to Agent Platform. The hosted app uses the `vertex-streamlit` service account, which has the Agent Platform User role.
 
 ### Hosting on Streamlit Community Cloud
 The app is deployed from the GitHub repo with `app/app.py` as the entry point and Python 3.12. The following secrets are set in the Streamlit dashboard:
 
 - `DATABASE_URL`: the Neon connection string.
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`: for SageMaker and Comprehend.
-- `GCP_SA_KEY_JSON`: the full service account key JSON, which the agent writes to a temp file and points Vertex at.
+- `GCP_SA_KEY_JSON`: the full service account key JSON, which the agent writes to a temp file and points the credentials at.
 
 ## Multi cloud
 
-The system spans two clouds: GCP Vertex AI runs the agent, and AWS runs both the SageMaker endpoints and Comprehend. AWS Comprehend performs live key phrase and sentiment extraction on the press releases. An AWS Bedrock summarization call is also implemented in `app.py`, but it is not invoked live because a new AWS account ships with a near zero daily token quota that requires a support increase.
+The system spans two clouds: GCP Agent Platform runs the agent, and AWS runs both the SageMaker endpoints and Comprehend. AWS Comprehend performs live key phrase and sentiment extraction on the press releases. An AWS Bedrock summarization integration was also attempted, but this new AWS account ships with a near zero daily Bedrock token quota that requires a support increase, so it is not invoked live and summarization is routed through the chatbot instead.
 
 ## Notes and honest caveats
 
