@@ -14,6 +14,8 @@ The Streamlit app imports ask() from this module.
 import os
 import json
 import asyncio
+import time
+import concurrent.futures
 from pathlib import Path
 
 import psycopg2
@@ -173,10 +175,25 @@ async def _ask_async(question: str, user_id: str = "user", session_id: str = "se
             final = event.content.parts[0].text or final
     return final
 
-
 def ask(question: str, user_id: str = "user", session_id: str = "session") -> str:
-    """Synchronous entry point used by the Streamlit app."""
-    return asyncio.run(_ask_async(question, user_id, session_id))
+    """Synchronous entry point. Runs the async agent in its own thread so it works
+    both standalone and inside Streamlit. Retries on transient Vertex 429
+    RESOURCE_EXHAUSTED errors with backoff."""
+    last_err = None
+    for attempt in range(4):
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(
+                    lambda: asyncio.run(_ask_async(question, user_id, session_id))
+                ).result()
+        except Exception as e:
+            last_err = e
+            if "RESOURCE_EXHAUSTED" in str(e) or "429" in str(e):
+                if attempt < 3:
+                    time.sleep(2 ** attempt * 3)   # waits 3s, 6s, 12s
+                    continue
+            raise
+    raise last_err
 
 
 if __name__ == "__main__":
